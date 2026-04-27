@@ -1,50 +1,50 @@
 import streamlit as st
-import random
-import time
+import joblib
+import numpy as np
 
-# Configuración de página
-st.set_page_config(page_title="Practica Ecuaciones ", page_icon="🧮")
+# Configuración
+st.set_page_config(page_title="Clasificador Iris", page_icon="🌸")
 
-# Función para generar ecuación
-def generar_ecuacion():
-    a = random.randint(1, 10)
-    b = random.randint(-10, 10)
-    x = random.randint(-10, 10)
+st.title("🌸 Clasificador de Iris")
+st.write("Prueba tus modelos entrenados (KNN y SVM)")
 
-    resultado = a * x + b
-    ecuacion = f"{a}x + ({b}) = {resultado}"
+# Cargar modelos
+@st.cache_resource
+def cargar_modelos():
+    knn = joblib.load("modelo_iris_knn.pkl")
+    svm = joblib.load("modelo_iris_svm.pkl")
+    return knn, svm
 
-    return ecuacion, x
+knn_model, svm_model = cargar_modelos()
 
-# Estado
-if "ecuacion" not in st.session_state:
-    st.session_state.ecuacion, st.session_state.respuesta = generar_ecuacion()
+# Selector de modelo
+modelo_opcion = st.selectbox(
+    "Selecciona el modelo:",
+    ["KNN", "SVM"]
+)
 
-# UI
-st.title("🧮 Generador de Ecuaciones")
-st.write("Resuelve la siguiente ecuación:")
+# Inputs de características
+st.subheader("Ingresa las características:")
 
-st.subheader(st.session_state.ecuacion)
+sepal_length = st.slider("Sepal Length", 4.0, 8.0, 5.5)
+sepal_width  = st.slider("Sepal Width", 2.0, 4.5, 3.0)
+petal_length = st.slider("Petal Length", 1.0, 7.0, 4.0)
+petal_width  = st.slider("Petal Width", 0.1, 2.5, 1.0)
 
-# Input
-respuesta_usuario = st.number_input("Valor de x:", step=1)
+# Preparar datos
+X = np.array([[sepal_length, sepal_width, petal_length, petal_width]])
 
-col1, col2 = st.columns(2)
-
-# Verificar respuesta
-with col1:
-    if st.button("Verificar"):
-        with st.spinner("Verificando..."):
-            time.sleep(1.2)  # animación de carga
-
-        if respuesta_usuario == st.session_state.respuesta:
-            st.balloons()  # 🎈 animación
-            st.success("¡Correcto! 🎉")
+# Predicción
+if st.button("Predecir"):
+    with st.spinner("Analizando..."):
+        if modelo_opcion == "KNN":
+            pred = knn_model.predict(X)
         else:
-            st.error(f"Incorrecto 😢. Era: {st.session_state.respuesta}")
+            pred = svm_model.predict(X)
 
-# Nueva ecuación
-with col2:
-    if st.button("Nueva ecuación"):
-        st.session_state.ecuacion, st.session_state.respuesta = generar_ecuacion()
-        st.rerun()
+    clases = ["Setosa", "Versicolor", "Virginica"]
+
+    resultado = clases[int(pred[0])]
+    
+    st.success(f"🌼 Predicción: {resultado}")
+    st.balloons()
