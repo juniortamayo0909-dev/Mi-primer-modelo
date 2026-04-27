@@ -3,7 +3,7 @@ import random
 import time
 
 # Configuración de página
-st.set_page_config(page_title="Ecuaciones App", page_icon="🧮")
+st.set_page_config(page_title="Practica Ecuaciones ", page_icon="🧮")
 
 # Función para generar ecuación
 def generar_ecuacion():
