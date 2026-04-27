@@ -6,21 +6,30 @@ from sklearn.datasets import load_iris
 from sklearn.metrics import accuracy_score, confusion_matrix
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Dashboard Iris", page_icon="🌸", layout="wide")
+# Configuración
+st.set_page_config(page_title="Iris App", page_icon="🌸", layout="wide")
 
-st.title("🌸 Dashboard Clasificador Iris")
-st.write("Comparación de modelos KNN vs SVM")
+st.title("🌸 Clasificador Iris (KNN vs SVM)")
+st.write("Prueba tus modelos entrenados")
 
-# Cargar modelos
+# =========================
+# CARGAR MODELOS
+# =========================
 @st.cache_resource
 def cargar_modelos():
     knn = joblib.load("modelo_iris_knn.pkl")
     svm = joblib.load("modelo_iris_svm.pkl")
     return knn, svm
 
-knn_model, svm_model = cargar_modelos()
+try:
+    knn_model, svm_model = cargar_modelos()
+except:
+    st.error("❌ No se encontraron los modelos .pkl en la carpeta")
+    st.stop()
 
-# Dataset Iris
+# =========================
+# DATASET
+# =========================
 iris = load_iris()
 X = iris.data
 y = iris.target
@@ -29,16 +38,18 @@ clases = iris.target_names
 df = pd.DataFrame(X, columns=iris.feature_names)
 df["target"] = y
 
-# Sidebar navegación
-opcion = st.sidebar.selectbox(
-    "Menú",
-    ["Predicción", "Comparación modelos", "Dataset"]
+# =========================
+# MENÚ
+# =========================
+menu = st.sidebar.selectbox(
+    "Opciones",
+    ["Predicción", "Comparación", "Dataset"]
 )
 
 # =========================
 # 🔮 PREDICCIÓN
 # =========================
-if opcion == "Predicción":
+if menu == "Predicción":
     st.header("🔮 Predicción individual")
 
     col1, col2 = st.columns(2)
@@ -54,35 +65,32 @@ if opcion == "Predicción":
     entrada = np.array([[sl, sw, pl, pw]])
 
     if st.button("Predecir"):
-        with st.spinner("Analizando..."):
+        with st.spinner("Procesando..."):
             pred_knn = knn_model.predict(entrada)[0]
             pred_svm = svm_model.predict(entrada)[0]
 
-        st.subheader("Resultados:")
+        st.subheader("Resultados")
 
         col1, col2 = st.columns(2)
 
         with col1:
             st.success(f"KNN: {clases[pred_knn]}")
             if hasattr(knn_model, "predict_proba"):
-                probs = knn_model.predict_proba(entrada)[0]
-                st.write("Probabilidades:", probs)
+                st.write("Probabilidades:", knn_model.predict_proba(entrada)[0])
 
         with col2:
             st.success(f"SVM: {clases[pred_svm]}")
             if hasattr(svm_model, "predict_proba"):
-                probs = svm_model.predict_proba(entrada)[0]
-                st.write("Probabilidades:", probs)
+                st.write("Probabilidades:", svm_model.predict_proba(entrada)[0])
 
         st.balloons()
 
 # =========================
 # 📊 COMPARACIÓN
 # =========================
-elif opcion == "Comparación modelos":
+elif menu == "Comparación":
     st.header("📊 Evaluación de modelos")
 
-    # Predicciones
     y_pred_knn = knn_model.predict(X)
     y_pred_svm = svm_model.predict(X)
 
@@ -91,16 +99,12 @@ elif opcion == "Comparación modelos":
 
     col1, col2 = st.columns(2)
 
-    with col1:
-        st.metric("Accuracy KNN", f"{acc_knn:.2f}")
+    col1.metric("Accuracy KNN", f"{acc_knn:.2f}")
+    col2.metric("Accuracy SVM", f"{acc_svm:.2f}")
 
-    with col2:
-        st.metric("Accuracy SVM", f"{acc_svm:.2f}")
-
-    # Matriz de confusión
     st.subheader("Matriz de confusión")
 
-    modelo = st.selectbox("Selecciona modelo", ["KNN", "SVM"])
+    modelo = st.selectbox("Modelo", ["KNN", "SVM"])
 
     if modelo == "KNN":
         cm = confusion_matrix(y, y_pred_knn)
@@ -109,7 +113,7 @@ elif opcion == "Comparación modelos":
 
     fig, ax = plt.subplots()
     ax.imshow(cm)
-    ax.set_title(f"Matriz de Confusión - {modelo}")
+    ax.set_title(f"Matriz - {modelo}")
     st.pyplot(fig)
 
 # =========================
@@ -118,6 +122,4 @@ elif opcion == "Comparación modelos":
 else:
     st.header("📁 Dataset Iris")
     st.dataframe(df)
-
-    st.subheader("Estadísticas")
     st.write(df.describe())
